@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Berkeley Restaurant Inspections Explorer</title>
+<meta name="description" content="Search and browse the latest City of Berkeley restaurant inspection results by facility, street and violation type.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main class="ri">
+  <header id="top">
+    <h1>Berkeley restaurant inspections</h1>
+    <p class="sub">Each facility's most recent inspection, as recorded in the City's data pulled <span data-kpi="pulled">—</span>.</p>
+    <p class="lede">Of the <b class="num" data-kpi="inspected">—</b> facilities with an inspection on record, <b class="num" data-kpi="pctClean">—</b> had no violations at their latest one. <b class="num" data-kpi="anyViolation">—</b> had at least one minor violation, and <b class="num" data-kpi="major">—</b> had a major violation. Click any card to list those facilities below.</p>
+    <p class="ri-error" id="load-error" hidden></p>
+  </header>
+
+  <section id="cards" class="ri-kpis" aria-label="Summary">
+    <button class="ri-kpi" data-filter="all" type="button"><span class="lab">Facilities listed</span><span class="big" data-kpi="facilities">—</span><span class="lab">all records</span></button>
+    <button class="ri-kpi" data-filter="clean" type="button"><span class="lab">No violations</span><span class="big ok" data-kpi="clean">—</span><span class="lab">at latest inspection</span></button>
+    <button class="ri-kpi" data-filter="holding" type="button"><span class="lab">Improper holding temperature</span><span class="big warn" data-kpi="holding">—</span><span class="lab">minor violation</span></button>
+    <button class="ri-kpi" data-filter="equipment" type="button"><span class="lab">Contaminated equipment</span><span class="big warn" data-kpi="equipment">—</span><span class="lab">minor violation</span></button>
+    <button class="ri-kpi" data-filter="both" type="button"><span class="lab">Both of those</span><span class="big warn" data-kpi="both">—</span><span class="lab">at the same inspection</span></button>
+    <button class="ri-kpi" data-filter="old" type="button"><span class="lab">Last inspected 12+ months ago</span><span class="big" data-kpi="over1yr">—</span><span class="lab">before the data pull</span></button>
+    <button class="ri-kpi" data-filter="none" type="button"><span class="lab">No inspection on record</span><span class="big" data-kpi="notInspected">—</span><span class="lab">no date in the file</span></button>
+  </section>
+
+  <section id="explorer">
+    <h2>Find a facility</h2>
+    <p class="sub">Search by name or address, narrow by result or street, and click a column heading to sort.</p>
+    <div class="ri-controls">
+      <input class="ri-search" id="q" type="search" placeholder="Search name or address…" aria-label="Search name or address">
+      <select id="result" aria-label="Result">
+        <option value="all">All results</option>
+        <option value="any">Any violation</option>
+        <option value="holding">Holding temperature</option>
+        <option value="equipment">Contaminated equipment</option>
+        <option value="both">Both</option>
+        <option value="clean">No violations</option>
+        <option value="old">Last inspected 12+ months ago</option>
+        <option value="none">No inspection on record</option>
+      </select>
+      <select id="street" aria-label="Street"><option value="">All streets</option></select>
+      <button id="reset" type="button">Clear filters</button>
+    </div>
+    <p class="note num" id="shown">Loading…</p>
+    <div class="ri-tablewrap">
+      <table class="ri-table">
+        <thead><tr>
+          <th data-sort="name" aria-sort="ascending">Facility</th>
+          <th data-sort="date" aria-sort="none">Last inspected</th>
+          <th data-sort="result" aria-sort="none">Result</th>
+          <th data-sort="violations" aria-sort="none">Violations noted</th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="ri-two">
+    <div class="ri-card" id="streets-card">
+      <h2>Results by street</h2>
+      <p class="sub">Streets with 8 or more listed facilities. Click a bar to filter the list.</p>
+      <div class="ri-legend"><span><i style="background: var(--ok)"></i>No violations</span><span><i style="background: var(--warn)"></i>Minor violation</span><span><i style="background: var(--chart-muted)"></i>No inspection on record</span></div>
+      <div class="ri-chart" id="street-chart"></div>
+    </div>
+    <div class="ri-card" id="months-card">
+      <h2>When facilities were last inspected</h2>
+      <p class="sub">Facilities by month of their most recent inspection, past 13 months. The latest month is partial.</p>
+      <div class="ri-legend"><span><i style="background: var(--ok)"></i>No violations</span><span><i style="background: var(--warn)"></i>Minor violation</span></div>
+      <div class="ri-chart" id="month-chart"></div>
+    </div>
+  </section>
+
+  <details id="about">
+    <summary>About this data</summary>
+    <ul>
+      <li>Source: City of Berkeley restaurant inspection data (<a href="data/restaurant-inspections.csv" download>download the CSV used here</a>).</li>
+      <li>The file holds one row per facility for its latest inspection only, so past inspections and trends over time aren't in it.</li>
+      <li>Each violation is a yes/no flag in five categories (holding temperature, cooking, personal hygiene, contaminated equipment, unsafe food source), split into major and minor. In this file only two minor categories are ever flagged: improper holding temperature and contaminated equipment. No major violations appear.</li>
+      <li>A few facilities appear on more than one row (Whole Foods on Telegraph three times for the same day, Safeway on Shattuck twice). Those are combined here into one facility using its latest date, with every flag from that date.</li>
+      <li>Some businesses have several permits at one address (e.g. Berkeley Bowl and Andronico's departments), so they appear more than once under the same name.</li>
+      <li>Street names are tidied from the address text (typos like "UNIVESITY", "MLK JR. WAY" vs "M L KING JR WY") so each street groups together. The original address is always shown.</li>
+      <li>"12+ months ago" counts days between the inspection and the data pull date; it is not a statement about any required inspection schedule.</li>
+    </ul>
+  </details>
+</main>
+
+<script src="vendor/d3.v7.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
